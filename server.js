@@ -1,5 +1,5 @@
+import connectDB from "./config/connection.js";
 const conTable = import('console.table');
-import connectDB from "./config/connection";
 import inquirer from 'inquirer';
 
 
@@ -53,13 +53,9 @@ const setupQuest = async () => {
 }
 
 const viewEmployees = async () => {
-    let data = await connectDB.promise().query(
-        `SELECT a.first_name as "First Name", a.last_name as "Last Name", roles.title as Title, roles.salary as Salary, 
-        department.dept_name as Department, 
-        CONCAT(b.first_name, ' ', b.last_name) as Manager from employee a left join employee b on a.manager_id = b.id left join roles on a.roles_id = roles.roles.id left join department ON role.dept_id = department.dept_id`
-    ); console.table(data[0]);
-
-};
+    let data = await connectDB.promise().query("SELECT a.id AS 'ID', a.first_name AS 'First Name', a.last_name AS 'Last Name', roles.title AS 'Job Title', department.name AS 'Department', roles.salary AS 'Salary', CONCAT(b.first_name, ' ', b.last_name) AS 'Manager' FROM employee a JOIN roles ON a.role_id = roles.id JOIN department ON roles.department_id = department.id LEFT OUTER JOIN employee b ON a.manager_id = b.id;")
+    console.table(data[0]);
+    };
 
 const viewDepartments = async () => {
     let data = await connectDB.promise().query("SELECT * FROM department");
@@ -67,8 +63,9 @@ const viewDepartments = async () => {
 };
 
 const viewRoles = async () => {
-    let data = await connectDB.promise().query('SELECT roles_id as ID, ')
-}
+    let data = await connectDB.promise().query("SELECT roles.ID AS 'ID', roles.title AS 'Title', department.name AS 'Department', roles.salary AS 'Salary' FROM roles JOIN department ON roles.department_id = department.id;");
+    console.table(data[0]);
+};
 
 const addDept = () => {
     inquirer.prompt([{
@@ -84,7 +81,7 @@ const addDept = () => {
 
 const addRoles = async () => {
     let departments = await connectDB.promise().query(
-        `SELECT name, dept_id AS value FROM department`
+        `SELECT name,id AS value FROM department`
     );
     console.log('departments: ', departments[0])
     inquirer.prompt([{
@@ -98,7 +95,7 @@ const addRoles = async () => {
         message: 'Enter the salary for the new role',
     },
     {
-        name: 'dept_id',
+        name: 'department_id',
         type: 'rawlist',
         message: 'Enter a department id for the new role',
         choices: departments[0]
@@ -117,10 +114,10 @@ const addRoles = async () => {
 const addEmployee = () => {
     connectDB.query(`SELECT * FROM roles;`, (err, res) => {
         if (err) throw err;
-        let eroles = res.map(roles => ({ name: roles.title, value: roles.roles_id }));
+        let role = res.map(roles => ({ name: roles.title, value: roles.id }));
         connectDB.query(`SELECT * FROM employee`, (err, res) => {
             if (err) throw err;
-            let employees = res.map(employee => ({ name: employee.first_name + '' + employee.last_name, value: employee.employee_id }))
+            let employees = res.map(employee => ({ name: employee.first_name + '' + employee.last_name, value: employee.id }))
             inquirer.prompt([
                 {
                     name: 'firstName',
@@ -136,7 +133,7 @@ const addEmployee = () => {
                     name: 'roles',
                     type: 'rawlist',
                     message: 'please enter the role for the new employee',
-                    choices: eroles
+                    choices: role
                 },
                 {
                     name: 'manager',
@@ -160,8 +157,8 @@ const addEmployee = () => {
 const updateEmployee = () => {
     connectDB.query(`SELECT * FROM roles;`, (err, res) => {
         if (err) throw err;
-        let eroles = res.map(roles => ({
-            name: roles.title, value: roles.roles_id
+        let role = res.map(roles => ({
+            name: roles.title, value: roles.id
         }));
         connectDB.query(`SELECT * FROM employee;`, (err, res) => {
             if (err) throw err;
@@ -175,20 +172,21 @@ const updateEmployee = () => {
                     message: 'choose the employee you would like to update',
                     choices: employees
                 },
-                {name: 'empRole',
-                type: 'rawlist',
-                message: 'choose the new role for the employee',
-                choices: eroles
-            },
+                {
+                    name: 'empRole',
+                    type: 'rawlist',
+                    message: 'choose the new role for the employee',
+                    choices: role
+                },
 
-            ]).then((updateInput)=> {
-                connectDB.query(`UPDATE employee SET ? WHERE ?`, [{roles_id: updateInput.empRole}, {id: updateInput.employee}],
-                (err, res)=> {
-                    if (err) throw err;
-                    setupQuest()
-                })
+            ]).then((updateInput) => {
+                connectDB.query(`UPDATE employee SET ? WHERE ?`, [{ roles_id: updateInput.empRole }, { id: updateInput.employee }],
+                    (err, res) => {
+                        if (err) throw err;
+                        setupQuest()
+                    })
             })
-         })
+        })
     })
 };
 setupQuest();
