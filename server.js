@@ -76,9 +76,9 @@ const addDept = () => {
         type: 'input',
         message: 'Enter name for new department'
     },
-    ]).then ((deptName)=>{
-    connectDB.query(`INSERT INTO department SET ?`, {name: deptName.deptAdd});
-    setupQuest()
+    ]).then((deptName) => {
+        connectDB.query(`INSERT INTO department SET ?`, { name: deptName.deptAdd });
+        setupQuest()
     })
 };
 
@@ -103,31 +103,92 @@ const addRoles = async () => {
         message: 'Enter a department id for the new role',
         choices: departments[0]
     },
-]).then((roleInput)=>{
-    connectDB.query(
-        `INSERT INTO roles SET ?`, roleInput,
-        (err, res) => {
-            if (err) throw err;
-            setupQuest()
-        }
-    )
-})
+    ]).then((roleInput) => {
+        connectDB.query(
+            `INSERT INTO roles SET ?`, roleInput,
+            (err, res) => {
+                if (err) throw err;
+                setupQuest()
+            }
+        )
+    })
 };
 
 const addEmployee = () => {
-    connectDB.query(`SELECT * FROM roles;`, (err, res)=> {
-        if (err)throw err; 
-        let eroles = res.map(roles => ({name: roles.title, value: roles.roles_id}));
-        connectDB.query(`SELECT * FROM employee`, (err, res)=> {
-            if (err)throw err;
-            let employees = res.map(employee => ({name: employee.first_name + '' + employee.last_name, value: employee.employee_id}))
-            inquirer.prompt ([
+    connectDB.query(`SELECT * FROM roles;`, (err, res) => {
+        if (err) throw err;
+        let eroles = res.map(roles => ({ name: roles.title, value: roles.roles_id }));
+        connectDB.query(`SELECT * FROM employee`, (err, res) => {
+            if (err) throw err;
+            let employees = res.map(employee => ({ name: employee.first_name + '' + employee.last_name, value: employee.employee_id }))
+            inquirer.prompt([
                 {
                     name: 'firstName',
                     type: 'input',
                     message: 'Enter the first name of the new employee'
+                },
+                {
+                    name: 'lastName',
+                    type: 'input',
+                    message: 'Enter the new employees last name'
+                },
+                {
+                    name: 'roles',
+                    type: 'rawlist',
+                    message: 'please enter the role for the new employee',
+                    choices: eroles
+                },
+                {
+                    name: 'manager',
+                    type: 'rawlist',
+                    message: 'enter the manager of the new employee',
+                    choices: employees
                 }
-            ])
+            ]).then((employeeInput) => {
+                connectDB.query(
+                    `INSERT INTO employee SET ?`, { first_name: employeeInput.firstName, last_name: employeeInput.lastName, roles_id: employeeInput.roles, manager_id: employeeInput.manager },
+                    (err, res) => {
+                        if (err) throw err;
+                        setupQuest()
+                    }
+                )
+            })
         })
     })
-}
+};
+
+const updateEmployee = () => {
+    connectDB.query(`SELECT * FROM roles;`, (err, res) => {
+        if (err) throw err;
+        let eroles = res.map(roles => ({
+            name: roles.title, value: roles.roles_id
+        }));
+        connectDB.query(`SELECT * FROM employee;`, (err, res) => {
+            if (err) throw err;
+            let employees = res.map(employee => ({
+                name: employee.first_name + '' + employee.last_name, value: employee_id
+            }));
+            inquirer.prompt([
+                {
+                    name: 'employee',
+                    type: 'rawlist',
+                    message: 'choose the employee you would like to update',
+                    choices: employees
+                },
+                {name: 'empRole',
+                type: 'rawlist',
+                message: 'choose the new role for the employee',
+                choices: eroles
+            },
+
+            ]).then((updateInput)=> {
+                connectDB.query(`UPDATE employee SET ? WHERE ?`, [{roles_id: updateInput.empRole}, {id: updateInput.employee}],
+                (err, res)=> {
+                    if (err) throw err;
+                    setupQuest()
+                })
+            })
+         })
+    })
+};
+setupQuest();
