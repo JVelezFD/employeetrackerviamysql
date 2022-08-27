@@ -26,7 +26,7 @@
   *node index.js
 
   ##Demo
-  use the Jest install to test documents and follow the video walk through as well
+  * Demo - https://watch.screencastify.com/v/JDm9U7GuWQ6DktYbIE5h
 
   
   ##Screenshot
